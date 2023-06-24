@@ -5,6 +5,7 @@ from urllib.request import urlopen
 import glob 
 import re 
 import base64
+import shutil
 
 # Get the desired output filename from the user
 name = input('enter final file name: ')
