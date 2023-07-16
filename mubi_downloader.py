@@ -102,7 +102,7 @@ dest_dir = f"{folder_path}/{name}"
 os.system(fr'shaka-packager in="{folder_path}/{name}.mp4",stream=video,output="{dest_dir}/decrypted-video.mp4" --enable_raw_key_decryption --keys {decryption_key}')  # The decrypted video file will be saved in E:\uncomplete\{name}\decrypted-video.mp4
 
 # Define a regex pattern to match the audio file names
-regex_pattern = re.escape(name) + r"\.[a-z]{2}\.m4a"
+regex_pattern = re.escape(name) + r"\.[a-z]{2,}\.m4a"
 # Loop through all files in the folder_path directory
 for filename in os.listdir(folder_path):
     if filename.endswith(".srt") and name in filename:
