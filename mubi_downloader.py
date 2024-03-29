@@ -1,25 +1,80 @@
-import requests  
-import json 
+import requests
+import json
 import os  
 from urllib.request import urlopen 
 import glob 
 import re 
 import base64
 import shutil
+import time
+
+# All useful var :
+authorization = 'Bearer xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' # F12->Network->Search for Viewing->Search for bearer.
+jsonheader = "dt-custom-data: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # F12->Network->Search for CENC -> Search for dt-custom-data
+
+# Movie Search
+from bs4 import BeautifulSoup
+movieSearchUrl = "https://whatsonmubi.com/?q="
+movieSearchQuery = input("Enter movie name:") # add the movie name here
+
+# User Location
+ip_response = requests.get('http://ip-api.com/json/')
+ip_data = ip_response.json()
+user_country_code = ip_data['countryCode'].lower()
+
+
+# Send query to whatsonubi.com
+movieSearchResponse = requests.get(movieSearchUrl + movieSearchQuery)
+soup = BeautifulSoup(movieSearchResponse.text, 'html.parser')
+
+# Find the first result
+first_result = soup.find('div', class_='film')
+if first_result:
+    movieSearchFirstResultID = first_result['data-id'] # Film ID
+    movieSearchFirstResultYear = first_result['data-year'] # Film Year
+    movieSearchFirstResultFilmShowing = first_result.find('p', class_='film-showing').text
+    movieSearchFirstResultFilmShowingList = movieSearchFirstResultFilmShowing.split(",")
+    movieSearchFirstResultFilmTitle =  first_result.find('h2').text
+    movieSearchFirstResultFilmTitle = movieSearchFirstResultFilmTitle + " ("+ movieSearchFirstResultYear +")"
+    mubiURL = first_result.find('a', class_='link-to-mubi').text
+
+    print("Title found: "+movieSearchFirstResultFilmTitle+" with ID: "+movieSearchFirstResultID+".")
+    print("List of available countries:"+movieSearchFirstResultFilmShowing+".")
+
+    # Check if user_country_code is in the list
+    if user_country_code in movieSearchFirstResultFilmShowingList:
+        print("Your IP is located in "+user_country_code+". Viewing is available in your location")
+        print("Please open in your browser and come back when movie is loading.")
+        print("URL : "+mubiURL)
+        input("Ready to go? Press Enter to continue")
+    else:
+        print("Your IP is located in "+user_country_code+". Viewing is NOT available in your location.")
+        print("Available locations :"+movieSearchFirstResultFilmShowing)
+        input("Press Enter to exit")
+        exit
+else:
+    print("No results found")
+    movieSearchFirstResultID = input("MANUAL MODE: Enter the film ID: ") # add the film ID here
+    movieSearchFirstResultFilmTitle = input("MANUAL MODE: Enter the film title: ") # add the film title here
+    movieSearchFirstResultFilmYear = input("MANUAL MODE: Enter the film year: ") # add the film year here
+    movieSearchFirstResultFilmTitle = movieSearchFirstResultFilmTitle + " ("+ movieSearchFirstResultFilmYear +")"
 
 # Get the desired output filename from the user
-name = input('enter final file name: ')
+name = movieSearchFirstResultFilmTitle
+clientCountry = user_country_code
+clientLanguage = 'fr'
+filmID = movieSearchFirstResultID; 
+downloadFolder = "download"
 
-# Define headers to be sent with the HTTP request
 headers = {
     'authority': 'api.mubi.com',
     'accept': '*/*',
-    'accept-language': 'en',
-    'authorization': 'Bearer ADDHERE', # add the authorization token here
+    'accept-language': clientLanguage,
+    'authorization': authorization,
     'client': 'web',
     'client-accept-audio-codecs': 'aac',
     'client-accept-video-codecs': 'h265,vp9,h264',
-    'client-country': 'US',
+    'client-country': clientCountry,
     'dnt': '1',
     'origin': 'https://mubi.com',
     'referer': 'https://mubi.com/',
@@ -33,7 +88,8 @@ headers = {
 }
 
 # Make a GET request to the specified URL with the given headers, and load the response JSON into a dictionary
-response = requests.get('https://api.mubi.com/v3/films/ADDHERE/viewing/secure_url', headers=headers) # mubi movie ID goes here
+print(headers)
+response = requests.get('https://api.mubi.com/v3/films/'+filmID+'/viewing/secure_url', headers=headers) # mubi movie ID goes here
 mubi = json.loads(response.text)
 
 # Extract the video title and secure URL from the response
@@ -44,7 +100,7 @@ mubi = mubi['url']
 kid = requests.get(mubi)
 result = re.search(r'cenc:default_KID="(\w{8}-(?:\w{4}-){3}\w{12})">', str(kid.text))
 
-# Define a function for generating the PSSH box, which contains information about the encryption key
+# Define a fction for generating the PSSH box, which contains information about the encryption key
 def get_pssh(keyId):
     array_of_bytes = bytearray(b'\x00\x00\x002pssh\x00\x00\x00\x00')
     array_of_bytes.extend(bytes.fromhex("edef8ba979d64acea3c827dcd51d21ed"))
@@ -76,7 +132,7 @@ headers = {
 # Set the JSON data for the request
 json_data = {
     'license': 'https://lic.drmtoday.com/license-proxy-widevine/cenc/?specConform=true',
-    'headers': 'dt-custom-data: ADDHERE', # add your encoded headers, starts with "ey"
+    'headers': jsonheader, # add your encoded headers, starts with "ey"
     'pssh': f'{pssh}',                                                
     'buildInfo': '',                                                 
     'proxy': '',                                                      
@@ -91,11 +147,11 @@ result = re.search(r"[a-z0-9]{16,}:[a-z0-9]{16,}", str(response.text))
 
 # Get the decryption key and format it properly
 decryption_key = result.group()
-print(decryption_key)
 decryption_key = f'key_id={decryption_key}'
 decryption_key = decryption_key.replace(":",":key=")
+
 # Download the video using N_m3u8DL-RE
-folder_path = f"ADDHERE" # Make this a valid path to a folder
+folder_path = downloadFolder
 os.system(fr'N_m3u8DL-RE "{mubi}" --auto-select --save-name "{name}" --auto-select --save-dir {folder_path} --tmp-dir {folder_path}/temp')
 # Run shaka-packager to decrypt the video file
 dest_dir = f"{folder_path}/{name}"
