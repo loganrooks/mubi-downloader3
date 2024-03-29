@@ -2,13 +2,8 @@
 
 This is a tool to backup movies from Mubi, using your own legit account.
 
-## Table of Contents
-- [Introduction](#Introduction)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Legal Notice](#legal-notice)
-
-## About this fork:
+## About this fork
+- Based on [mubi-downloader](https://github.com/NDDDDDDDDD/mubi-downloader);
 - Added crawling from Whatsonmubi to search from within the terminal;
 - Fallback to setting manually the ID if the movie is not found (e.g. the film is not referenced on whatsonmubi);
 - Added easily editable variables at the beginning of the script;
@@ -24,7 +19,7 @@ This is a tool to backup movies from Mubi, using your own legit account.
 - Enter a random string to escape the automatic title search
 - Enter manually the title and the id, they'll be used for the filename.
  
-## Mubi Downloader (Original)
+## Mubi Downloader
 "Mubi Downloader" is a Python script that allows users to download movies from the Mubi streaming service. It uses the Mubi API to extract the video URL and decryption key, and then decrypts it using shaka-packager.
 
 ## Introduction
@@ -39,9 +34,7 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
     * (Note: this part might be buggy, you might have to edit requirements.txt, or install one at a time).
 4. Install [shaka-packager](https://github.com/shaka-project/shaka-packager/releases/tag/v2.6.1) and [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE/releases).
 5. Once installed, add the folders where the tools are installed to your system's `PATH` environment variable. 
-
    - On Windows:
-
      1. Open the Start menu and search for "Environment Variables".
      2. Click "Edit the system environment variables".
      3. Click the "Environment Variables" button.
@@ -50,9 +43,8 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
      6. Click "OK" to close all the windows.
 
 ## Usage
-
 1. Open the `mubi_downloader.py` file in a text editor.
-2. Replace lines 12-13 with your own values (see comments in code to find them).
+2. Replace lines 12-13 with your own values (see comments in muby_downloader.py to find them).
 4. Open your terminal and navigate to the directory containing the `mubi_downloader.py` file. (or add it to PATH)
 5. Run the following command in your terminal:
 
@@ -61,7 +53,7 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
     ```
 
 6. Follow the terminal questions and your movie will download.
-7. You have to open the page in your actual browser and play the movie for at least one second otherwise it'll not work.
+7. You have to open the page in your actual browser, log-in to Mubi and play the movie for at least one second otherwise it'll not work.
 
 ## Legal Notice
 - This program is intended solely for educational and informational purposes. The authors and contributors of this program do not condone or encourage any illegal or unethical activities. Any misuse of this program for unlawful or unethical purposes is strictly prohibited.
