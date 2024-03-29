@@ -4,3 +4,4 @@ os
 re
 base64
 shutil
+beautifulsoup4
