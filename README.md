@@ -21,7 +21,7 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
 
 ## Installation
 1. Clone the repository or download the zip file.
-2. Install the required libraries using one of the following methods: (Note: this part might be buggy, you might have to edit requirements.exe, check terminal errors).
+2. Install the required libraries using one of the following methods: (Note: this part might be buggy, you might have to edit requirements.txt, check errors).
     * Run the 'install_requirements.bat'
     * Manually install each library specified in 'requirements.txt'.
     * Run 'pip install -r requirements.txt'
