@@ -2,28 +2,32 @@
 
 This is a tool to backup movies from Mubi, using your own legit account.
 
-## About this fork
+## Contents
+- [About](#about)
+- [Bugs](#bugs)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Legal](#legal-notice)
+
+## About
 - Based on [mubi-downloader](https://github.com/NDDDDDDDDD/mubi-downloader);
-- Added crawling from Whatsonmubi to search from within the terminal;
-- Fallback to setting manually the ID if the movie is not found (e.g. the film is not referenced on whatsonmubi);
+- Added search to whatsonmubi from within the terminal, falling back to manually setting the ID if the movie is not found (e.g. the film is not referenced on whatsonmubi);
 - Added easily editable variables at the beginning of the script;
-- Added checking IP origin to match expectation from Mubi.
+- Added checking IP origin to match country expectation from Mubi.
 - All available subtitles (SRT) are backed-up as well.
-- TODO: There is another script to merge all the files into an uncompressed .mkv with embedded SRTs.
+- mergetomkv.py to merge the backed-up files.
 - The code we've added to the original might be 💩 as it's been 🤖 assisted.
 
-## Known bugs
-### With some foreign characters the files may fail to write at the last moment.
-- Note the ID,
-- Re-run the script,
-- Enter a random string to escape the automatic title search
-- Enter manually the title and the id, they'll be used for the filename.
- 
-## Mubi Downloader
 "Mubi Downloader" is a Python script that allows users to download movies from the Mubi streaming service. It uses the Mubi API to extract the video URL and decryption key, and then decrypts it using shaka-packager.
 
-## Introduction
 Mubi is a streaming service that offers a carefully curated selection of movies from around the world. However, the platform restricts users from downloading the movies to their devices. Fortunately, this script bypasses that restriction and allows users to download movies from MUBI for offline viewing.
+
+## Bugs
+With some foreign characters the files may fail to write at the last moment.
+ 1. Note the ID,
+ 2. Re-run the script,
+ 3. Enter a random string to escape the automatic title search
+ 4. Enter manually the title and the id, they'll be used for the filename.
 
 ## Installation
 1. Clone the repository or download the zip file.
@@ -47,13 +51,20 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
 2. Replace lines 12-13 with your own values (see comments in muby_downloader.py to find them).
 4. Open your terminal and navigate to the directory containing the `mubi_downloader.py` file. (or add it to PATH)
 5. Run the following command in your terminal:
-
     ```
     python mubi_downloader.py
     ```
-
-6. Follow the terminal questions and your movie will download.
+6. Follow the terminal prompts.
 7. You have to open the page in your actual browser, log-in to Mubi and play the movie for at least one second otherwise it'll not work.
+
+## Merge the files
+mergetomkv.py will merge the video, audio and srt tracks into a single uncompressed .mkv file.
+1. Copy and paste the mergetomkv.py file into the folder of the files you want to merge;
+2. Open a terminal in the folder
+3.  ```
+    python mergetomkv.py
+    ```
+4. Wait, done.
 
 ## Legal Notice
 - This program is intended solely for educational and informational purposes. The authors and contributors of this program do not condone or encourage any illegal or unethical activities. Any misuse of this program for unlawful or unethical purposes is strictly prohibited.
