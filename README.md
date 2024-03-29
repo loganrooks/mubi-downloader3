@@ -52,7 +52,7 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
 ## Usage
 
 1. Open the `mubi_downloader.py` file in a text editor.
-2. Replace lines 12-13 with your own values.
+2. Replace lines 12-13 with your own values (see comments in code to find them).
 4. Open your terminal and navigate to the directory containing the `mubi_downloader.py` file. (or add it to PATH)
 5. Run the following command in your terminal:
 
@@ -61,6 +61,7 @@ Mubi is a streaming service that offers a carefully curated selection of movies 
     ```
 
 6. Follow the terminal questions and your movie will download.
+7. You have to open the page in your actual browser and play the movie for at least one second otherwise it'll not work.
 
 ## Legal Notice
 - This program is intended solely for educational and informational purposes. The authors and contributors of this program do not condone or encourage any illegal or unethical activities. Any misuse of this program for unlawful or unethical purposes is strictly prohibited.
