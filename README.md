@@ -50,11 +50,12 @@ With some foreign characters the files may fail to write at the last moment.
 1. Open the `mubi_downloader.py` file in a text editor.
 2. Replace lines 12-13 with your own values (see comments in muby_downloader.py to find them).
 4. Open your terminal and navigate to the directory containing the `mubi_downloader.py` file. (or add it to PATH)
-5. Run    ```
+5. Run
+    ```
     python mubi_downloader.py
     ```
-6. Search for the movie.
-7. Check if you're in the right country but wait before pressing `Enter`.
+7. Search for the movie.
+8. Check if you're in the right country but wait before pressing `Enter`.
 9. Open the page in your actual browser, log-in to Mubi and play the movie for at least one second.
 10. Now press `Enter`.
 
