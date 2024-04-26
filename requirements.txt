@@ -1,8 +1,2 @@
 requests
-json
-os
-re
-base64
-shutil
 beautifulsoup4
-subprocess
