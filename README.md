@@ -1,5 +1,3 @@
-<img src="https://mubi.com/MUBI-logo.png" alt="Mubi Logo" width="200"/>
-
 This is a tool to backup movies from Mubi, using your own legit account.
 
 ## Contents
@@ -30,13 +28,12 @@ With some foreign characters the files may fail to write at the last moment.
  4. Enter manually the title and the id, they'll be used for the filename.
 
 ## Installation
-1. Clone the repository or download the zip file.
+1. Clone the repository or download the zip file and extract it.
 2. Install the required libraries using one of the following methods:
     * Run the 'install_requirements.bat'
     * Manually install each library specified in 'requirements.txt'.
     * Run 'pip install -r requirements.txt'
-    * (Note: this part might be buggy, you might have to edit requirements.txt, or install one at a time).
-4. Install [shaka-packager](https://github.com/shaka-project/shaka-packager/releases/tag/v2.6.1) and [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE/releases).
+4. Download [shaka-packager](https://github.com/shaka-project/shaka-packager/releases/) and [N_m3u8DL-RE](https://github.com/nilaoda/N_m3u8DL-RE/releases) into the folder.
 5. Once installed, add the folders where the tools are installed to your system's `PATH` environment variable. 
    - On Windows:
      1. Open the Start menu and search for "Environment Variables".
@@ -48,7 +45,7 @@ With some foreign characters the files may fail to write at the last moment.
 
 ## Usage
 1. Open the `mubi_downloader.py` file in a text editor.
-2. Replace lines 12-13 with your own values (see comments in muby_downloader.py to find them).
+2. Replace lines 12-13 with your own values (see comments in muby_downloader.py).
 4. Open your terminal and navigate to the directory containing the `mubi_downloader.py` file. (or add it to PATH)
 5. Run
     ```
