@@ -245,10 +245,10 @@ class DownloadManager:
         if os.path.exists(f"{self.download_folder}/{title}.mp4"):
             os.remove(f"{self.download_folder}/{title}.mp4")
 
-def setup_logging():
+def setup_logging(level=logging.INFO):
     """Configures logging for the application"""
     logging.basicConfig(
-        level=logging.INFO,
+        level=level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(),

@@ -7,28 +7,36 @@ from typing import Optional
 from .mubi_downloader import MovieSearch, DownloadManager, setup_logging
 from .auth_manager import AuthManager
 
+BROWSERS = ['chrome', 'firefox', 'edge']
+
 def get_browser_choice() -> str:
     """Interactive browser selection"""
-    browsers = ['chrome', 'firefox', 'edge']
     print("\nAvailable browsers:")
-    for i, browser in enumerate(browsers, 1):
+    for i, browser in enumerate(BROWSERS, 1):
         print(f"{i}. {browser.title()}")
     
     while True:
         try:
             choice = input("\nSelect your browser (1-3): ")
             idx = int(choice) - 1
-            if 0 <= idx < len(browsers):
-                return browsers[idx]
+            if 0 <= idx < len(BROWSERS):
+                return BROWSERS[idx]
             print("Please enter a number between 1 and 3")
         except ValueError:
             print("Please enter a valid number")
 
 def get_wsl_cookie_path(browser: str) -> Optional[str]:
     """Get the cookie path for browsers in WSL2"""
-    windows_home = os.environ.get('USERPROFILE', '')
-    if not windows_home:
-        # Try to get Windows username from /mnt/c/Users
+    windows_home = None
+    
+    # Try to get Windows username from environment
+    if 'USERPROFILE' in os.environ:
+        windows_home = os.environ['USERPROFILE'].replace('\\', '/')
+        if windows_home.startswith('C:'):
+            windows_home = f"/mnt/c{windows_home[2:]}"
+    
+    # If not found, try to detect from /mnt/c/Users
+    if not windows_home and os.path.exists('/mnt/c/Users'):
         try:
             users = os.listdir('/mnt/c/Users')
             # Filter out default Windows folders
@@ -36,31 +44,56 @@ def get_wsl_cookie_path(browser: str) -> Optional[str]:
             if len(users) == 1:
                 windows_home = f'/mnt/c/Users/{users[0]}'
         except (FileNotFoundError, PermissionError):
-            return None
-
-    if not windows_home:
-        return None
-
-    cookie_paths = {
-        'chrome': f'{windows_home}/AppData/Local/Google/Chrome/User Data/Default/Cookies',
-        'firefox': f'{windows_home}/AppData/Roaming/Mozilla/Firefox/Profiles',
-        'edge': f'{windows_home}/AppData/Local/Microsoft/Edge/User Data/Default/Cookies'
-    }
+            pass
     
-    path = cookie_paths.get(browser)
-    if path and os.path.exists(path):
-        return path
+    if windows_home:
+        cookie_paths = {
+            'chrome': f"{windows_home}/AppData/Local/Google/Chrome/User Data/Default/Cookies",
+            'firefox': f"{windows_home}/AppData/Roaming/Mozilla/Firefox/Profiles",
+            'edge': f"{windows_home}/AppData/Local/Microsoft/Edge/User Data/Default/Cookies"
+        }
+        return cookie_paths.get(browser)
     return None
 
 def main():
     """Main CLI entry point"""
-    parser = argparse.ArgumentParser(description='Mubi Downloader - Download movies from Mubi')
-    parser.add_argument('-b', '--browser', choices=['chrome', 'firefox', 'edge'],
-                      help='Browser to extract cookies from')
-    parser.add_argument('-o', '--output', default='download',
-                      help='Output directory for downloaded files')
-    parser.add_argument('-v', '--verbose', action='store_true',
-                      help='Enable verbose logging')
+    prog_name = os.path.basename(sys.argv[0])
+    if prog_name == '__main__.py':
+        prog_name = 'mubi-downloader'
+        
+    parser = argparse.ArgumentParser(
+        description='Mubi Downloader - Download movies from Mubi',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        prog=prog_name,
+        epilog="""
+Examples:
+  %(prog)s                          # Interactive mode with browser selection
+  %(prog)s -b chrome               # Use Chrome browser
+  %(prog)s -b firefox -o movies    # Use Firefox and custom output directory
+  %(prog)s -v                      # Enable verbose logging
+        """
+    )
+    
+    parser.add_argument(
+        '-b', '--browser',
+        choices=BROWSERS,
+        metavar='BROWSER',
+        help=f'Browser to extract cookies from ({", ".join(BROWSERS)})'
+    )
+    
+    parser.add_argument(
+        '-o', '--output',
+        default='download',
+        metavar='DIR',
+        help='Output directory for downloaded files'
+    )
+    
+    parser.add_argument(
+        '-v', '--verbose',
+        action='store_true',
+        help='Enable verbose logging'
+    )
+    
     args = parser.parse_args()
 
     # Setup logging
