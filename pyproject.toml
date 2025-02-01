@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mubi-downloader"
+version = "0.1.0"
+description = "A downloader for Mubi content"
+requires-python = ">=3.8"
+authors = [
+  { name = "Mubi Downloader Contributors" }
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=mubi_downloader --cov-report=term-missing"
