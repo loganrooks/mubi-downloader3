@@ -120,5 +120,83 @@ class AuthManager:
         return response.status_code == 200
 ```
 
+## Cross-Platform Architecture Enhancements
+
+### 1. Environment Detection System
+```python
+class EnvironmentDetector:
+    """Detects OS environment and configures paths accordingly"""
+    def __init__(self):
+        self.is_wsl = False
+        self.os_type = 'linux'
+        self.browser_paths = {}
+        
+        # Detect WSL2
+        if os.path.exists('/proc/version'):
+            with open('/proc/version') as f:
+                if 'microsoft' in f.read().lower():
+                    self.is_wsl = True
+                    self.os_type = 'wsl2'
+                    
+        # Detect native Windows
+        elif os.name == 'nt':
+            self.os_type = 'windows'
+            
+        self._configure_paths()
+        
+    def _configure_paths(self):
+        """Set platform-appropriate browser cookie paths"""
+        if self.os_type == 'windows':
+            self.browser_paths = {
+                'chrome': os.path.expandvars('%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default\\Cookies'),
+                'firefox': os.path.expandvars('%APPDATA%\\Mozilla\\Firefox\\Profiles'),
+                'edge': os.path.expandvars('%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default\\Cookies')
+            }
+        elif self.is_wsl:
+            windows_home = os.path.expanduser('~').replace('/home/', '/mnt/c/Users/')
+            self.browser_paths = {
+                'chrome': f"{windows_home}/AppData/Local/Google/Chrome/User Data/Default/Cookies",
+                'firefox': f"{windows_home}/AppData/Roaming/Mozilla/Firefox/Profiles",
+                'edge': f"{windows_home}/AppData/Local/Microsoft/Edge/User Data/Default/Cookies"
+            }
+        else:  # Native Linux
+            self.browser_paths = {
+                'chrome': os.path.expanduser('~/.config/google-chrome/Default/Cookies'),
+                'firefox': os.path.expanduser('~/.mozilla/firefox/'),
+                'edge': os.path.expanduser('~/.config/microsoft-edge/Default/Cookies')
+            }
+```
+
+### 2. Enhanced Authentication Flow
+```mermaid
+graph TD
+    A[Start Auth] --> B{Valid Cookies?}
+    B -->|Yes| C[Generate Headers]
+    B -->|No| D{Environment}
+    D -->|GUI Capable| E[Launch Browser Login]
+    D -->|Headless| F[Manual Token Input]
+    E --> G[Extract New Cookies]
+    F --> H[Validate Manual Input]
+    G --> C
+    H --> C
+    C --> I[Proceed with Download]
+```
+
+### 3. Fallback System Components
+- **Browser Launcher**: Cross-platform browser automation
+- **Manual Input Handler**: Guided terminal input with validation
+- **Path Normalizer**: Unified path handling across OSes
+- **Credential Storage**: Secure platform-appropriate storage
+  - Windows: DPAPI protected storage
+  - Linux: Keyring integration
+  - WSL: Hybrid encrypted file storage
+
+## Implementation Plan
+1. Create `environment.py` with detection and path normalization
+2. Update `auth_manager.py` to use environment detection
+3. Implement browser launch fallback using `webbrowser` module
+4. Add manual input handling with validation
+5. Update shell scripts with environment checks
+
 ## Conclusion
-This architecture document outlines the strategy and implementation plan to automate MUBI film downloading by dynamically managing authentication. The approach leverages browser cookie extraction to generate secure headers, thereby eliminating hardcoded credentials and enhancing both security and usability.
+The enhanced architecture enables true cross-platform operation while maintaining security. The layered fallback approach ensures maximum usability across different environments from headless servers to desktop GUI environments.
