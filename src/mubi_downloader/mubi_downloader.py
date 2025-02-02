@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
-import sys
-import requests
-import json
 import os
-import logging
-from urllib.request import urlopen
-import glob
 import re
+import json
+import logging
+import requests
 import base64
 import shutil
-import time
 from dataclasses import dataclass
 from typing import Optional, Dict, List
 from bs4 import BeautifulSoup
@@ -194,108 +190,134 @@ class DownloadManager:
             movie_info (MovieInfo): Information about the movie to download
         """
         try:
-            decryption_key, secure_url = self._get_encryption_info(
-                f'https://api.mubi.com/v3/films/{movie_info.film_id}/viewing/secure_url'
-            )
+            api_url = f'https://api.mubi.com/v3/films/{movie_info.film_id}/viewing/secure_url'
+            self.logger.debug(f"Fetching secure URL from: {api_url}")
+            decryption_key, secure_url = self._get_encryption_info(api_url)
+            self.logger.debug("Successfully obtained encryption info")
             
             # Download video
             dest_dir = os.path.join(self.download_folder, movie_info.full_title)
             os.makedirs(dest_dir, exist_ok=True)
+            self.logger.debug(f"Created destination directory: {dest_dir}")
             
             self.logger.info("Downloading video...")
-            os.system(f'N_m3u8DL-RE "{secure_url}" --auto-select --save-name "{movie_info.full_title}" '
-                     f'--save-dir {self.download_folder} --tmp-dir {self.download_folder}/temp')
+            download_cmd = f'N_m3u8DL-RE "{secure_url}" --auto-select --save-name "{movie_info.full_title}" ' \
+                         f'--save-dir {self.download_folder} --tmp-dir {self.download_folder}/temp'
+            self.logger.debug(f"Download command: {download_cmd}")
+            os.system(download_cmd)
+            
+            input_file = f"{self.download_folder}/{movie_info.full_title}.mp4"
+            output_file = f"{dest_dir}/decrypted-video.mp4"
+            if not os.path.exists(input_file):
+                self.logger.error(f"Downloaded file not found: {input_file}")
+                raise FileNotFoundError(f"Downloaded file not found: {input_file}")
             
             # Decrypt video
             self.logger.info("Decrypting video...")
-            os.system(f'shaka-packager in="{self.download_folder}/{movie_info.full_title}.mp4",'
-                     f'stream=video,output="{dest_dir}/decrypted-video.mp4" '
-                     f'--enable_raw_key_decryption --keys {decryption_key}')
+            decrypt_cmd = f'shaka-packager in="{input_file}",stream=video,output="{output_file}" ' \
+                       f'--enable_raw_key_decryption --keys {decryption_key}'
+            self.logger.debug(f"Decryption command: {decrypt_cmd}")
+            os.system(decrypt_cmd)
+            
+            if not os.path.exists(output_file):
+                self.logger.error(f"Decrypted file not found: {output_file}")
+                raise FileNotFoundError(f"Decryption failed - output file not found: {output_file}")
+                
+            self.logger.debug("Video decryption completed successfully")
             
             # Process subtitles and audio
+            self.logger.debug("Processing additional files...")
             self._process_additional_files(movie_info.full_title, dest_dir, decryption_key)
+            self.logger.debug("Additional file processing completed")
             
         except Exception as e:
             self.logger.error(f"Download/decrypt failed: {e}")
             raise
     
     def _process_additional_files(self, title: str, dest_dir: str, decryption_key: str):
-        """Processes subtitle and audio files"""
+        """
+        Processes subtitle and audio files
+        
+        Args:
+            title (str): Movie title
+            dest_dir (str): Destination directory for processed files
+            decryption_key (str): Decryption key for audio files
+        """
+        self.logger.debug(f"Processing additional files for: {title}")
+        self.logger.debug(f"Destination directory: {dest_dir}")
+        
         regex_pattern = re.escape(title) + r"\.[a-z]{2,}\.m4a"
+        self.logger.debug(f"Using audio file pattern: {regex_pattern}")
+        
+        processed_files = []
         
         for filename in os.listdir(self.download_folder):
+            src_path = os.path.join(self.download_folder, filename)
+            
             # Move subtitle files
             if filename.endswith(".srt") and title in filename:
-                shutil.move(
-                    os.path.join(self.download_folder, filename),
-                    os.path.join(dest_dir, filename)
-                )
+                self.logger.debug(f"Found subtitle file: {filename}")
+                dest_path = os.path.join(dest_dir, filename)
+                try:
+                    shutil.move(src_path, dest_path)
+                    self.logger.debug(f"Moved subtitle file to: {dest_path}")
+                    processed_files.append(dest_path)
+                except Exception as e:
+                    self.logger.error(f"Failed to move subtitle file: {str(e)}")
             
             # Process audio files
             if re.match(regex_pattern, filename):
                 lang_match = re.search(re.escape(title) + r"\.([a-zA-Z]{2,})\.m4a", filename)
                 if lang_match:
                     lang = lang_match.group(1)
-                    os.system(f'shaka-packager in="{self.download_folder}/{title}.{lang}.m4a",'
-                            f'stream=audio,output="{dest_dir}/decrypted-audio.{lang}.m4a" '
-                            f'--enable_raw_key_decryption --keys {decryption_key}')
-                    os.remove(f"{self.download_folder}/{title}.{lang}.m4a")
+                    self.logger.debug(f"Found audio track for language: {lang}")
+                    
+                    output_path = os.path.join(dest_dir, f"decrypted-audio.{lang}.m4a")
+                    decrypt_cmd = f'shaka-packager in="{src_path}",' \
+                                f'stream=audio,output="{output_path}" ' \
+                                f'--enable_raw_key_decryption --keys {decryption_key}'
+                    
+                    self.logger.debug(f"Decrypting audio track: {lang}")
+                    self.logger.debug(f"Decryption command: {decrypt_cmd}")
+                    os.system(decrypt_cmd)
+                    
+                    if os.path.exists(output_path):
+                        self.logger.debug(f"Successfully decrypted audio track: {lang}")
+                        processed_files.append(output_path)
+                        os.remove(src_path)
+                        self.logger.debug(f"Removed encrypted audio file: {src_path}")
+                    else:
+                        self.logger.error(f"Failed to decrypt audio track: {lang}")
                     
         # Cleanup
-        if os.path.exists(f"{self.download_folder}/{title}.mp4"):
-            os.remove(f"{self.download_folder}/{title}.mp4")
+        src_video = os.path.join(self.download_folder, f"{title}.mp4")
+        if os.path.exists(src_video):
+            self.logger.debug(f"Removing source video file: {src_video}")
+            os.remove(src_video)
+        
+        self.logger.debug(f"Processed files: {processed_files}")
 
-def setup_logging(level=logging.INFO):
-    """Configures logging for the application"""
+def setup_logging(debug: bool = False):
+    """
+    Configures logging for the application
+    
+    Args:
+        debug (bool): Enable debug logging
+    """
+    level = logging.DEBUG if debug else logging.INFO
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    
+    # Configure root logger
     logging.basicConfig(
         level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format=log_format,
         handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler('mubi_downloader.log')
+            logging.StreamHandler()
         ]
     )
-
-def main():
-    """Main entry point for the Mubi downloader"""
-    setup_logging()
-    logger = logging.getLogger('main')
     
-    try:
-        auth_manager = AuthManager()
-        movie_search = MovieSearch()
-        download_manager = DownloadManager(auth_manager)
-        
-        # Get user's location
-        user_country = movie_search.get_user_location()
-        
-        # Search for movie
-        query = input("Enter movie name: ")
-        movie_info = movie_search.search_movie(query)
-        
-        if not movie_info:
-            logger.error("No movie information available")
-            return
-        
-        logger.info(f"Found movie: {movie_info.full_title}")
-        
-        # Check availability
-        if user_country in movie_info.available_countries:
-            logger.info(f"Movie is available in your location ({user_country})")
-            print(f"Please open {movie_info.mubi_url} in your browser and start playing the movie")
-            input("Press Enter when ready to proceed with download")
-        else:
-            logger.error(f"Movie is not available in {user_country}")
-            print(f"Available in: {', '.join(movie_info.available_countries)}")
-            return
-        
-        # Download and decrypt
-        download_manager.download_and_decrypt(movie_info)
-        logger.info("Download and decryption completed successfully")
-        
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
-        sys.exit(1)
-
-if __name__ == "__main__":
-    main()
+    # Add file handler for all levels
+    file_handler = logging.FileHandler('mubi_downloader.log')
+    file_handler.setFormatter(logging.Formatter(log_format))
+    file_handler.setLevel(level)
+    logging.getLogger().addHandler(file_handler)
