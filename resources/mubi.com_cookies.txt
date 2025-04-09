@@ -1,0 +1,36 @@
+# Netscape HTTP Cookie File
+# http://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file!  Do not edit.
+
+.mubi.com	TRUE	/	TRUE	1770153137	__stripe_mid	c71a61b5-af0e-4d12-b432-9f52e77839bc37126f
+mubi.com	FALSE	/	TRUE	1769967884	cookieyes-consent	consentid:NGJHT3lQeU5sQWM0VkNIU0tLOTdRWFJnZE02bUtJN1M,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes,other:yes
+.mubi.com	TRUE	/	FALSE	1772618583	_scid	5IMa4LJcm2-SmcxUk8iCns-Y1myBJ02M
+mubi.com	FALSE	/	FALSE	1769967885	__pdst	df69e91020124c3a98276226cdf705d7
+.mubi.com	TRUE	/	FALSE	1746207886	_gcl_au	1.1.2106601767.1738431886
+.mubi.com	TRUE	/	FALSE	1773177058	_ga	GA1.1.803919942.1738431886
+mubi.com	FALSE	/	FALSE	1769967928	mubi-cookie-local-storage	true
+mubi.com	FALSE	/	FALSE	0	referral_prompted_on_logout	6kkq0d6yld8u5x1lbeo7w803gdw0bmizcpqrpz1738458183
+.mubi.com	TRUE	/	FALSE	1754009777	__utmz	0.1234567890.1.1.utmcsr=google.com|utmccn=(referral)|utmcmd=referral|utmctr=/
+mubi.com	FALSE	/	FALSE	1770022768	lt	2181a24332a4f8c9a99b841a9b2e3352eadc49
+mubi.com	FALSE	/	FALSE	0	error_count	7
+.mubi.com	TRUE	/	FALSE	1772313058	_tt_enable_cookie	1
+.mubi.com	TRUE	/	FALSE	1772313058	_ttp	wC5kPKNEjnbd0WQvZdk5CEYDmx4.tt.1
+mubi.com	FALSE	/	TRUE	1770044777	sa-user-id	s%253A0-60b34013-ddf9-54ce-5704-bb7e6b2cec66.VQWNqwW5kYUWUgUoXmPcuja3jXaTyMfsKo5tRA7FZj8
+mubi.com	FALSE	/	TRUE	1770044777	sa-user-id-v2	s%253AYLNAE935VM5XBLt-ayzsZkoMsu4.ci1k%252Bo58JxTWTGaSiX88%252FRuOOJdzTQm5QKLoYpvMXPI
+mubi.com	FALSE	/	TRUE	1770044777	sa-user-id-v3	s%253AAQAKILJ_8LfOMtISUXSaVfDzAUYAfkEbWqzAD5qK2_KcrekKEAEYAyDx7IC5BjABOgT2YzRIQgRNOF7Q.aG4o3PSvNC7qhnQ5t%252BB9seVpaVWjsy0LhO%252Feg%252BP0ihs
+.mubi.com	TRUE	/	FALSE	1739113578	_ScCbts	%5B%5D
+.mubi.com	TRUE	/	FALSE	1772695478	_sctr	1%7C1738472400000
+.mubi.com	TRUE	/	FALSE	1770114685	_clck	1xaskyq%7C2%7Cft4%7C0%7C1859
+.mubi.com	TRUE	/	TRUE	1738618930	_sp_ses.c006	*
+.mubi.com	TRUE	/	FALSE	1773177129	ab.storage.deviceId.a190db60-c8c3-4b18-ba14-62ae21dea964	g%3A257eb500-e77c-bc08-1246-79a092950ecf%7Ce%3Aundefined%7Cc%3A1738431813644%7Cl%3A1738615565720
+.mubi.com	TRUE	/	FALSE	1773177129	ab.storage.userId.a190db60-c8c3-4b18-ba14-62ae21dea964	g%3A5169320%7Ce%3Aundefined%7Cc%3A1738457692797%7Cl%3A1738615565720
+.mubi.com	TRUE	/	FALSE	1772803756	_scid_r	9gMa4LJcm2-SmcxUk8iCns-Y1myBJ02MXrCf9A
+.mubi.com	TRUE	/	TRUE	1746393058	_rdt_uuid	1738431885227.a2be7550-32ab-4531-b944-9ea9733308da
+.mubi.com	TRUE	/	FALSE	1738703460	_clsk	tbp4do%7C1738617060274%7C2%7C0%7Cn.clarity.ms%2Fcollect
+.mubi.com	TRUE	/	TRUE	1738618937	__stripe_sid	8a5cae5b-2f78-4505-9b1e-35b4c375abcc332e67
+.mubi.com	TRUE	/	FALSE	1773177129	_ga_Y8NWRXXMM8	GS1.1.1738615571.15.1.1738617129.60.0.0
+.mubi.com	TRUE	/	FALSE	1773177129	ab.storage.sessionId.a190db60-c8c3-4b18-ba14-62ae21dea964	g%3A1d85b244-1dab-bda8-703f-72e0aa76c58f%7Ce%3A1738618929852%7Cc%3A1738615565719%7Cl%3A1738617129852
+mubi.com	FALSE	/	TRUE	0	_mubi_session	bHQFeeVV0ewxjQFFKqcC1X%2B3XA8FD%2BDSCAcoIUY6eojmKKzj4SQc6JRrg3Q63K6CXX4AJRWIsy%2FBTvFRycQssEb8cJujZJavA2A5snTIrTy17p%2F80XEW29wRrwEJzx7AzRed3kwXR7UlWm8XCKB2nhBv7PQNZWm7YXdaSfKsLxbSrz%2BU6ufEPdyIYePnTKDtQ0flJtSjlPP84Y7gZPxRzO3SJaBI5%2BgoOQ%3D%3D--bqj0NP8KxcVDKhx0--BMkXYNXRdYHwgDWCPb2c0Q%3D%3D
+.mubi.com	TRUE	/	TRUE	1773177131	_sp_id.c006	a1b6e9e2-9b63-435d-ab33-56100932bce8.1738431795.15.1738617131.1738578693.c282c65a-b0ef-4928-b432-6b4c28318833
+mubi.com	FALSE	/	FALSE	0	app_startup_session	Mon%20Feb%2003%202025%2016%3A12%3A10%20GMT-0500%20(Eastern%20Standard%20Time)
+mubi.com	FALSE	/	FALSE	1770153146	muxData	=undefined&mux_viewer_id=61ef72d4-9532-42cf-832e-2309ddd77cef&msn=0.272130174108034&sid=696d37c3-25e0-4f5a-a3b6-2eb08b11da73&sst=1738615567748&sex=1738618646445

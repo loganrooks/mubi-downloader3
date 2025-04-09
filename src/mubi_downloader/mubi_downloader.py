@@ -63,18 +63,48 @@ class MovieSearch:
         try:
             response = requests.get(self.base_url + query)
             soup = BeautifulSoup(response.text, 'html.parser')
+            from bs4 import Tag
             result = soup.find('div', class_='film')
             
-            if not result:
-                self.logger.info("No results found, entering manual mode")
+            if not result or not isinstance(result, Tag):
+                self.logger.info("No valid results found, entering manual mode")
                 return self._handle_manual_entry()
+                
+            # Safely extract data with type checking
+            title_elem = result.find('h2')
+            if not title_elem or not isinstance(title_elem, Tag):
+                self.logger.error("Could not find valid title element")
+                return self._handle_manual_entry()
+                
+            # Get attributes directly from the Tag
+            film_id = result.attrs.get('data-id')
+            if not film_id:
+                self.logger.error("Could not find film ID")
+                return self._handle_manual_entry()
+                
+            year = result.attrs.get('data-year')
+            if not year:
+                self.logger.error("Could not find year")
+                return self._handle_manual_entry()
+                
+            countries_elem = result.find('p', attrs={'class': 'film-showing'})
+            available_countries = []
+            if countries_elem and isinstance(countries_elem, Tag) and countries_elem.string:
+                available_countries = [c.strip() for c in countries_elem.string.split(",")]
+                
+            link_elem = result.find('a')
+            film_slug = ""
+            if link_elem and isinstance(link_elem, Tag):
+                href = link_elem.attrs.get('href', '')
+                if href:
+                    film_slug = href.split('/')[-1]
             
             return MovieInfo(
-                film_id=result['data-id'],
-                title=result.find('h2').text,
-                year=result['data-year'],
-                available_countries=result.find('p', class_='film-showing').text.split(","),
-                film_slug=result.find('a')['href'].split('/')[-1]
+                film_id=str(film_id),
+                title=title_elem.string.strip() if title_elem.string else title_elem.text.strip(),
+                year=str(year),
+                available_countries=available_countries,
+                film_slug=film_slug
             )
             
         except Exception as e:
@@ -99,26 +129,78 @@ class DownloadManager:
         self.download_folder = download_folder
         self.logger = logging.getLogger('DownloadManager')
         self._ensure_download_folder()
+        
+        # Get user's country code
+        try:
+            response = requests.get('http://ip-api.com/json/')
+            self.country_code = response.json()['countryCode'].upper()
+            self.logger.debug(f"Detected country code: {self.country_code}")
+        except Exception as e:
+            self.logger.error(f"Failed to get country code: {e}")
+            self.country_code = 'US'  # Default fallback
+            self.logger.debug(f"Using fallback country code: {self.country_code}")
     
     def _ensure_download_folder(self):
         """Creates download folder if it doesn't exist"""
         os.makedirs(self.download_folder, exist_ok=True)
         os.makedirs(os.path.join(self.download_folder, "temp"), exist_ok=True)
     
-    def _get_encryption_info(self, mubi_url: str) -> tuple:
+    def _get_encryption_info(self, api_url: str) -> tuple[str, str]:
         """
         Retrieves encryption information for the video.
         
+        Args:
+            api_url (str): API URL for retrieving the secure URL
+
         Returns:
-            tuple: (decryption_key, secure_url)
+            tuple[str, str]: Tuple of (decryption_key, secure_url)
         """
         try:
             headers = self._prepare_headers()
+            if not headers.get('dt-custom-data'):
+                raise ValueError("Missing required dt-custom-data header")
+            
+            # Extract film ID and check region access
+            film_id = api_url.split("/")[-3]
+            check_url = f'https://api.mubi.com/v3/films/{film_id}'
+            self.logger.debug(f"Checking film region access: {check_url}")
+            check_response = requests.get(check_url, headers=headers)
+            check_data = check_response.json()
+            
+            if 'available' in check_data and not check_data['available']:
+                self.logger.error("Film not available in your region")
+                raise ValueError("This film is not available in your region")
             
             # Get secure URL
-            response = requests.get(mubi_url, headers=headers)
-            mubi_data = response.json()
-            secure_url = mubi_data['url']
+            response = requests.get(api_url, headers=headers)
+            self.logger.debug(f"API Response Status: {response.status_code}")
+            self.logger.debug(f"API Response Headers: {dict(response.headers)}")
+            
+            try:
+                mubi_data = response.json()
+                self.logger.debug(f"API Response Data: {json.dumps(mubi_data, indent=2)}")
+            except Exception as e:
+                self.logger.error(f"Failed to parse API response: {e}")
+                self.logger.debug(f"Raw Response: {response.text}")
+                raise
+                
+            if response.status_code == 422:
+                self.logger.error("Invalid credentials or session expired")
+                raise ValueError("Your session has expired. Please log in again.")
+            elif response.status_code != 200:
+                error_msg = mubi_data.get('message', 'Unknown error')
+                self.logger.error(f"API error: {error_msg}")
+                raise ValueError(f"API returned {response.status_code}: {error_msg}")
+            
+            secure_url = mubi_data.get('url')
+            if not secure_url:
+                if 'errors' in mubi_data:
+                    self.logger.error(f"API Errors: {mubi_data['errors']}")
+                    raise ValueError(f"API Error: {mubi_data['errors']}")
+                
+                self.logger.error("No URL found in response")
+                self.logger.debug(f"Available fields: {list(mubi_data.keys())}")
+                raise ValueError("No streaming URL found in response. Your session may have expired.")
             
             # Get encryption key
             kid_response = requests.get(secure_url)
@@ -130,8 +212,11 @@ class DownloadManager:
             pssh = self._generate_pssh(kid)
             
             # Get decryption key
-            decryption_key = self._fetch_decryption_key(pssh, headers.get('dt-custom-data'))
+            dt_custom_data = headers.get('dt-custom-data')
+            if not dt_custom_data:
+                raise ValueError("Missing required dt-custom-data header")
             
+            decryption_key = self._fetch_decryption_key(pssh, dt_custom_data)
             return decryption_key, secure_url
         except Exception as e:
             self.logger.error(f"Failed to get encryption info: {str(e)}")
@@ -147,17 +232,77 @@ class DownloadManager:
     
     def _fetch_decryption_key(self, pssh: str, dt_custom_data: str) -> str:
         """Fetches decryption key from CDM project"""
-        response = requests.post('https://cdrm-project.com/wv', 
-            headers={'Content-Type': 'application/json'},
-            json={
-                'license': 'https://lic.drmtoday.com/license-proxy-widevine/cenc/?specConform=true',
-                'headers': dt_custom_data,
-                'pssh': pssh,
-                'buildInfo': '',
-                'proxy': '',
-                'cache': False,
-            })
-        
+        # Make sure dt_custom_data is properly formatted
+        try:
+            headers_json = json.loads(base64.b64decode(dt_custom_data))
+            # Format headers according to CDM project requirements
+            formatted_headers = {
+                "dt-custom-data": dt_custom_data,
+                "authorization": f"Bearer {headers_json.get('sessionId', '')}"
+            }
+        except:
+            formatted_headers = {"dt-custom-data": dt_custom_data}
+
+        try:
+            # Get CDM server endpoint first
+            cdm_url = 'https://cdrm-project.com/api/cdm/L3'
+            self.logger.debug(f"Using CDM endpoint: {cdm_url}")
+            
+            self.logger.debug(f"Requesting license with headers: {formatted_headers}")
+            response = requests.post(
+                cdm_url,
+                headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 Chrome/121.0.0.0',
+                    'Accept': 'application/json'
+                },
+                json={
+                    'license': 'https://lic.drmtoday.com/license-proxy-widevine/cenc/?specConform=true',
+                    'headers': formatted_headers,
+                    'pssh': pssh,
+                    'buildInfo': {
+                        'type': 'chrome',
+                        'version': '121.0.0.0',
+                        'architecture': 'x86_64'
+                    },
+                    'capabilities': {
+                        'securityLevel': 3,
+                        'hdcpVersion': 'HDCP_V2_2',
+                        'supportedKeySystems': ['com.widevine.alpha']
+                    }
+                },
+                timeout=30
+            )
+            
+            if response.status_code != 200:
+                self.logger.error(f"CDM Project API error: {response.status_code}")
+                self.logger.debug(f"Response content: {response.text}")
+                self.logger.debug(f"Request headers used: {formatted_headers}")
+                raise ValueError(f"CDM Project API returned {response.status_code}: {response.text}")
+                
+            # Response should contain the key pairs
+            response_data = response.json()
+            if 'keys' not in response_data:
+                self.logger.error("No keys found in response")
+                self.logger.debug(f"Response data: {response_data}")
+                raise ValueError("No decryption keys found in response")
+                
+            # Format key response
+            keys = []
+            for key in response_data['keys']:
+                if 'kid' in key and 'key' in key:
+                    keys.append(f"{key['kid']}:{key['key']}")
+                    
+            if not keys:
+                raise ValueError("No valid key pairs found in response")
+                
+            return f"key_id={keys[0].replace(':', ':key=')}"
+            
+        except Exception as e:
+            self.logger.error(f"Failed to obtain decryption key: {e}")
+            self.logger.exception("Detailed decryption error:")
+            raise ValueError("Failed to obtain decryption key")
+            
         key_match = re.search(r"([a-f0-9]{16,}:[a-f0-9]{16,})", str(response.text))
         if not key_match:
             raise ValueError("Failed to obtain decryption key")
@@ -168,15 +313,38 @@ class DownloadManager:
         """Prepares headers for API requests"""
         try:
             auth_headers = self.auth_manager.generate_headers()
+            # Use instance country code
+
             base_headers = {
                 'authority': 'api.mubi.com',
-                'accept': '*/*',
+                'accept': 'application/json',
+                'accept-language': 'en-US,en;q=0.9',
                 'client': 'web',
+                'client-version': '1.0.0',
+                'client-device': 'desktop',
+                'client-device-info': 'Windows NT 10.0',
+                'client-capabilities': 'drm-widevine',
                 'client-accept-audio-codecs': 'aac',
                 'client-accept-video-codecs': 'h265,vp9,h264',
                 'origin': 'https://mubi.com',
                 'referer': 'https://mubi.com/',
+                'client-country': self.country_code,  # Already uppercase from __init__
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0',
+                'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+                'sec-ch-ua-mobile': '?0',
+                'sec-ch-ua-platform': '"Windows"',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-site',
             }
+            
+            # Make sure auth headers exist and are properly formatted
+            if 'dt-custom-data' in auth_headers:
+                auth_headers['dt-custom-data'] = base64.b64encode(
+                    json.dumps(json.loads(base64.b64decode(auth_headers['dt-custom-data']))).encode()
+                ).decode()
+                
+            self.logger.debug(f"Using auth headers: {auth_headers}")
             return {**base_headers, **auth_headers}
         except Exception as e:
             self.logger.error(f"Failed to prepare headers: {str(e)}")

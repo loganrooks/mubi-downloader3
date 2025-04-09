@@ -4,6 +4,14 @@ browser-cookie3>=0.19.1
 pytest>=7.4.0
 pytest-mock>=3.11.1
 python-dotenv>=1.0.0
+cryptography>=41.0.0
+selenium>=4.17.2
+setuptools>=61.0
+undetected-chromedriver>=3.5.4
+# For Linux
+jeepney>=0.8.0; platform_system=="Linux"
+dbus-python>=1.2.18; platform_system=="Linux"
+secretstorage>=3.3.3; platform_system=="Linux"
 # For testing
 coverage>=7.3.0
 pytest-cov>=4.1.0
